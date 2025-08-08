@@ -1,0 +1,6 @@
+spotipy
+openai
+gTTS
+playsound
+requests
+pygame
