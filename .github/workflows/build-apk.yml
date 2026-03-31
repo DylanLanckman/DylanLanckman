@@ -4,17 +4,12 @@ on:
   push:
     branches:
       - claude/debate-academy-app-J1cao
-    paths:
-      - 'debate-app/**'
   workflow_dispatch:
 
 jobs:
   build:
     name: Build debug APK
     runs-on: ubuntu-latest
-    env:
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      ANDROID_HOME: /usr/local/lib/android/sdk
 
     steps:
       - name: Checkout repository
@@ -45,13 +40,31 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Android SDK platform 36
+        run: |
+          ANDROID_SDK=/usr/local/lib/android/sdk
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK" >> $GITHUB_ENV
+          yes | $ANDROID_SDK/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          $ANDROID_SDK/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "platform-tools" || \
+          $ANDROID_SDK/cmdline-tools/*/bin/sdkmanager \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "platform-tools"
+
+      - name: Write local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > debate-app/android/local.properties
+
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('debate-app/android/**/*.gradle*', 'debate-app/android/gradle/wrapper/gradle-wrapper.properties') }}
+          key: gradle-${{ hashFiles('debate-app/android/**/*.gradle*') }}
           restore-keys: gradle-
 
       - name: Make Gradle wrapper executable
@@ -60,7 +73,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: debate-app/android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
