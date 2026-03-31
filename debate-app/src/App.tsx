@@ -3,6 +3,7 @@ import { View, UserProfile } from './types';
 import { loadProfile, saveProfile } from './utils/storage';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
+import { SetupWizard } from './components/SetupWizard';
 import { TheoryLibrary } from './components/TheoryLibrary';
 import { LessonDetail } from './components/LessonDetail';
 import { DebatLab } from './components/DebateLab';
@@ -17,6 +18,9 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile>(loadProfile);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [viewParam, setViewParam] = useState<string | undefined>(undefined);
+  const [setupComplete, setSetupComplete] = useState<boolean>(
+    () => localStorage.getItem('setup_complete') === 'true'
+  );
 
   const handleProfileChange = (p: UserProfile) => {
     setProfile(p);
@@ -80,6 +84,10 @@ export default function App() {
         return <Dashboard profile={profile} onProfileChange={handleProfileChange} onNavigate={handleNavigate} />;
     }
   };
+
+  if (!setupComplete) {
+    return <SetupWizard onComplete={() => setSetupComplete(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
